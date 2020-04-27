@@ -15,9 +15,12 @@ public class Mover : MonoBehaviour
 
 	private GameObject handHold;
 
+	private FingerTrigger[] fingers;
+
 	void Start()
 	{
 		handHold = GameObject.FindGameObjectWithTag("HandHold");
+		fingers = GetComponentsInChildren<FingerTrigger>();
 	}
 
 	void Update()
@@ -26,7 +29,19 @@ public class Mover : MonoBehaviour
 		{
 			time += Time.deltaTime;
 			transform.position = new Vector3(Mathf.Cos(frequency * time) * amplitude, transform.position.y, 0f);
+			GameManager.Instance.activeHand.MatchMoverPos(transform.position);
 		}
+	}
+
+	public void UpdateAvailableFingers(GameObject[] activeHandFingers)
+	{
+		int speedPunishment = 5;
+		for(int i = 0; i < activeHandFingers.Length; i++)
+		{
+			fingers[i].gameObject.SetActive(activeHandFingers[i].activeSelf);
+			speedPunishment--;
+		}
+		frequency = 1 + speedPunishment;
 	}
 
 	public void LockIn(bool val = true)
@@ -38,14 +53,30 @@ public class Mover : MonoBehaviour
 			Vector2 handCollPos = transform.position;
 			Vector2 handHoldCollPos = handHold.transform.position;
 
-			Debug.Log(handCollPos + " " + handHoldCollPos + " " + Vector3.Distance(handCollPos, handHoldCollPos));
-
-			handCollPos.x = RoundToNearestFinger(handCollPos.x);
+			handCollPos.x = RoundToNearestFifth(handCollPos.x);
 			transform.position = handCollPos;
+			GameManager.Instance.activeHand.MatchMoverPos(transform.position);
+
+			CheckFingersOnHandhold();
 		}
 	}
 
-	float RoundToNearestFinger(float handX)
+	void CheckFingersOnHandhold()
+	{
+		int fingersOnHandhold = 5;
+		foreach(FingerTrigger finger in fingers)
+		{
+			if(finger.transform.position.x > 0.5f
+				|| finger.transform.position.x < -0.5f)
+			{
+				finger.gameObject.SetActive(false);
+				fingersOnHandhold--;
+			}
+		}
+		GameManager.Instance.activeHand.MatchMoverFingersOnHandhold(fingers);
+	}
+
+	float RoundToNearestFifth(float handX)
 	{
 		if (handX < 0.1f && handX > -0.1f)
 		{
@@ -53,53 +84,49 @@ public class Mover : MonoBehaviour
 		}
 		else if(handX > 0f)
 		{
-			handX += leftSideOffset;
 			if (handX < 0.3f)
 			{
-				rightSideOffset = 0.2f;
+				return 0.2f;
 			}
 			else if (handX < 0.5f)
 			{
-				rightSideOffset = 0.4f;
+				return 0.4f;
 			}
 			else if (handX < 0.7f)
 			{
-				rightSideOffset = 0.6f;
+				return 0.6f;
 			}
 			else if (handX < 0.9f)
 			{
-				rightSideOffset = 0.8f;
+				return 0.8f;
 			}
 			else
 			{
-				rightSideOffset = 1f;
+				return 1f;
 			}
-			return rightSideOffset - leftSideOffset;
 		}
 		else
 		{
-			handX -= rightSideOffset;
 			if (handX > -0.3f)
 			{
-				leftSideOffset = 0.2f;
+				return -0.2f;
 			}
 			else if (handX > -0.5f)
 			{
-				leftSideOffset = 0.4f;
+				return -0.4f;
 			}
 			else if (handX > -0.7f)
 			{
-				leftSideOffset = 0.6f;
+				return -0.6f;
 			}
 			else if (handX > -0.9f)
 			{
-				leftSideOffset = 0.8f;
+				return -0.8f;
 			}
 			else
 			{
-				leftSideOffset = 1f;
+				return -1f;
 			}
-			return -leftSideOffset + rightSideOffset;
 		}
 	}
 }

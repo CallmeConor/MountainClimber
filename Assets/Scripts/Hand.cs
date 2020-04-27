@@ -8,34 +8,66 @@ public class Hand : MonoBehaviour
 
 	public float frequency;
 	public float amplitude;
-	float time;
 
 	SpriteRenderer spriteRenderer;
+
+	private float xOffset;
+
+	GameObject[] fingersRenderers;
+	FingerTrigger[] fingers;
 
 	void Start()
 	{
 		spriteRenderer = GetComponent<SpriteRenderer>();
 		spriteRenderer.flipX = name.Contains("Right");
-	}
-
-	void Update()
-	{
-		time += Time.deltaTime;
-		if(activeHand)
+		xOffset = transform.position.x;
+		fingersRenderers = new GameObject[transform.childCount];
+		if (spriteRenderer.flipX)
 		{
-			// fix
-			transform.Translate(new Vector3(Mathf.Cos(frequency * time) * amplitude * Time.deltaTime, 0f, 0f));
-
-			if(Input.GetKeyDown(KeyCode.Space))
+			for (int i = 0; i < transform.childCount; i++)
 			{
-				// LOCK IN
-
+				fingersRenderers[i] = transform.GetChild((transform.childCount - 1) - i).gameObject;
 			}
 		}
+		else
+		{
+			for (int i = 0; i < transform.childCount; i++)
+			{
+				fingersRenderers[i] = transform.GetChild(i).gameObject;
+			}
+		}
+	}
+
+	public void BecameActiveHand()
+	{
+		MatchMoverToThisHand();
+	}
+
+	void MatchMoverToThisHand()
+	{
+		GameManager.Instance.handCollision.UpdateAvailableFingers(fingersRenderers);
+	}
+
+	public void MatchMoverFingersOnHandhold(FingerTrigger[] inFingers)
+	{
+		for(int f = 0; f < fingersRenderers.Length; f++)
+		{
+			fingersRenderers[f].SetActive(inFingers[f].gameObject.activeSelf);
+		}
+	}
+
+	public void MatchMoverPos(Vector2 moverPos)
+	{
+		transform.position = new Vector2(moverPos.x + xOffset, transform.position.y);
 	}
 
 	public void SetAsActiveHand(bool active)
 	{
 		activeHand = active;
+
+		if(activeHand)
+		{
+			BecameActiveHand();
+		}
 	}
 }

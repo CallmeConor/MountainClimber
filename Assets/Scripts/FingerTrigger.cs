@@ -5,7 +5,4 @@ using UnityEngine;
 [ExecuteAlways]
 public class FingerTrigger : MonoBehaviour
 {
-	void OnTriggerEnter2D(Collider2D collision)
-	{
-	}
 }
